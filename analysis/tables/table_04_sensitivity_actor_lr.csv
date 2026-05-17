@@ -1,0 +1,7 @@
+algorithm,scenario,actor_lr,seed_count,final_return_mean,final_return_std
+ff_ippo,small-4ag,0.0001,5,0.050000,0.111803
+ff_ippo,small-4ag,0.00025,5,0.000000,0.000000
+ff_ippo,small-4ag,0.0005,5,0.000000,0.000000
+ff_ippo,tiny-2ag,0.0001,5,0.050000,0.111803
+ff_ippo,tiny-2ag,0.00025,5,0.000000,0.000000
+ff_ippo,tiny-2ag,0.0005,5,0.000000,0.000000

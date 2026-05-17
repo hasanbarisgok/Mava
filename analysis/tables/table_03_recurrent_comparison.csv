@@ -1,0 +1,9 @@
+family,mode,scenario,seed_count,final_return_mean,final_return_std
+ippo,feedforward,small-4ag,5,0.000000,0.000000
+ippo,feedforward,tiny-2ag,5,0.000000,0.000000
+ippo,recurrent,small-4ag,5,0.000000,0.000000
+ippo,recurrent,tiny-2ag,5,0.000000,0.000000
+mappo,feedforward,small-4ag,5,0.000000,0.000000
+mappo,feedforward,tiny-2ag,5,0.000000,0.000000
+mappo,recurrent,small-4ag,5,0.000000,0.000000
+mappo,recurrent,tiny-2ag,5,0.000000,0.000000

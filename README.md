@@ -4,6 +4,10 @@
     </a>
 </p>
 
+> [!NOTE]
+> This branch contains a course-project analysis built on top of Mava.
+> Start with [PROJECT_ANALYSIS.md](PROJECT_ANALYSIS.md) for the experiment design, selected results, and interpretation.
+
 <h2 align="center">
     <p>Distributed Multi-Agent Reinforcement Learning in JAX</p>
 </h2>

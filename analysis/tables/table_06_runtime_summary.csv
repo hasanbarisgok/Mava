@@ -1,0 +1,7 @@
+environment,algorithm,run_count,runtime_sec_mean,runtime_sec_std
+lbf,ff_ippo,10,43.520,13.875
+lbf,ff_mappo,10,51.659,12.386
+rware,ff_ippo,20,50.212,13.718
+rware,ff_mappo,20,52.029,12.573
+rware,rec_ippo,10,61.672,10.587
+rware,rec_mappo,10,50.685,18.970

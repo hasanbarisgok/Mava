@@ -1,0 +1,9 @@
+algorithm,scenario,seed_count,final_return_mean,best_return_mean,mean_last3_mean
+ff_ippo,small-4ag,5,0.000000,0.050000,0.000000
+ff_ippo,tiny-2ag,5,0.000000,0.150000,0.050000
+ff_ippo,tiny-4ag,5,0.000000,0.050000,0.000000
+ff_ippo,tiny-4ag-easy,5,0.000000,0.050000,0.000000
+ff_mappo,small-4ag,5,0.000000,0.050000,0.016667
+ff_mappo,tiny-2ag,5,0.000000,0.100000,0.016667
+ff_mappo,tiny-4ag,5,0.000000,0.050000,0.016667
+ff_mappo,tiny-4ag-easy,5,0.000000,0.050000,0.016667

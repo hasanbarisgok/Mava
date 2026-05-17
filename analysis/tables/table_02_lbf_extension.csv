@@ -1,0 +1,5 @@
+algorithm,scenario,seed_count,positive_final_runs,final_return_mean,final_return_std
+ff_ippo,10x10-3p-3f,5,4,0.098200,0.070960
+ff_ippo,8x8-2p-2f-coop,5,1,0.025000,0.050000
+ff_mappo,10x10-3p-3f,5,4,0.088800,0.106680
+ff_mappo,8x8-2p-2f-coop,5,0,0.000000,0.000000
