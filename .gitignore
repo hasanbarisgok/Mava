@@ -177,3 +177,5 @@ multirun/
 
 # AI
 .aider**
+ai_content/
+ELITE_EXPERIMENT_PLAN.md

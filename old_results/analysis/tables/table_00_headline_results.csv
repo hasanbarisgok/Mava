@@ -1,0 +1,6 @@
+result_block,key_takeaway
+Main rware core,All final means stayed at 0 under the 5-seed informative budget.
+Recurrent follow-up,Recurrent variants did not break the floor-level pattern on representative rware scenarios.
+Sensitivity follow-up,"Lower actor_lr produced some small positives, but the main conclusion did not change."
+LBF extension,The pipeline can produce positive final returns in a second environment family.
+Threshold sweep,No stable rware budget threshold was identified up to 51200 timesteps.

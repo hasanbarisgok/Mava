@@ -1,224 +1,355 @@
-<p align="center">
-    <a href="docs/images/mava_logos/mava_full_logo.png">
-        <img src="docs/images/mava_logos/mava_full_logo.png" alt="Mava logo" width="50%"/>
-    </a>
-</p>
+# Controlled MARL Experiment Study on Mava
 
-<h2 align="center">
-    <p>Distributed Multi-Agent Reinforcement Learning in JAX</p>
-</h2>
+This repository contains a course-project study built on top of the
+[Mava](https://github.com/instadeepai/Mava) multi-agent reinforcement learning
+framework. The goal is not to propose a new MARL algorithm. The goal is to run
+a controlled, repeatable experiment that compares PPO-family methods under
+matched conditions.
 
-<div align="center">
+The current main results are from the real-budget Colab experiment matrix under
+`new-results/real_v1_matrix`. Older CPU/smoke-budget outputs are preserved under
+`old_results/`, but they should not be used as the main evidence.
 
-![Python Version](https://img.shields.io/python/required-version-toml?tomlFilePath=https%3A%2F%2Fraw.githubusercontent.com%2Finstadeepai%2FMava%2Fdevelop%2Fpyproject.toml)
-[![Tests](https://github.com/instadeepai/Mava/actions/workflows/ci.yaml/badge.svg)](https://github.com/instadeepai/Mava/actions/workflows/ci.yaml)
-[![License](https://img.shields.io/badge/License-Apache%202.0-orange.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
-[![MyPy](http://www.mypy-lang.org/static/mypy_badge.svg)](http://mypy-lang.org/)
-[![ArXiv](https://img.shields.io/badge/ArXiv-2410.01706-b31b1b.svg)](https://arxiv.org/abs/2410.01706)
-[![Collab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/instadeepai/Mava/blob/develop/examples/Quickstart.ipynb)
-</div>
+## Project Summary
 
-## Welcome to Mava! 🦁
+| Item | Current scope |
+| --- | --- |
+| Framework | Mava |
+| Main environment family | `rware` / RobotWarehouse |
+| Main algorithms | `ff_ippo`, `ff_mappo`, `rec_ippo`, `rec_mappo` |
+| Main scenarios | `tiny-2ag`, `tiny-4ag`, `tiny-4ag-easy`, `small-4ag` |
+| Seed protocol | `1, 2, 3, 4, 5` |
+| Main experiment size | `4 algorithms x 4 scenarios x 5 seeds = 80 runs` |
+| Main execution target | Colab Pro GPU runtime |
+| Main result folder | `new-results/real_v1_matrix` |
 
-<div align="center">
-<h3>
+## Research Question
 
-[**Installation**](#installation-) | [**Getting started**](#getting-started-)
+How do PPO-family multi-agent reinforcement learning methods behave on
+cooperative warehouse-style tasks when algorithm choice, recurrence, scenario
+difficulty, random seed, and training budget are controlled?
 
-</div>
+More specifically, this project asks:
 
-Mava allows researchers to experiment with multi-agent reinforcement learning (MARL) at lightning speed. The single-file JAX implementations are built for rapid research iteration - hack, modify, and test new ideas fast. Our [state-of-the-art algorithms][sable] scale seamlessly across devices. Created for researchers, by The Research Team at [InstaDeep](https://www.instadeep.com).
+- Does MAPPO outperform IPPO when the training budget and seed set are matched?
+- Does recurrent memory help in partially observable warehouse tasks?
+- How does performance change as the RWARE scenario becomes harder?
+- Are observed differences consistent across five random seeds?
 
-## Highlights 🦜
+## What Was Tested
 
-- 🥑 **Implementations of MARL algorithms**: Implementations of current state-of-the-art MARL algorithms that are distributed and effectively make use of available accelerators.
-- 🍬 **Environment Wrappers**: We provide first class support to a few JAX based MARL environment suites through the use of wrappers, however new environments can be easily added by using existing wrappers as a guide.
-- 🧪 **Statistically robust evaluation**: Mava natively supports logging to json files which adhere to the standard suggested by [Gorsane et al. (2022)][toward_standard_eval]. This enables easy downstream experiment plotting and aggregation using the tools found in the [MARL-eval][marl_eval] library.
-- 🖥️ **JAX Distrubution Architectures for Reinforcement Learning**: Mava supports both [Podracer][anakin_paper] architectures for scaling RL systems. The first of these is _Anakin_, which can be used when environments are written in JAX. This enables end-to-end JIT compilation of the full MARL training loop for fast experiment run times on hardware accelerators. The second is _Sebulba_, which can be used when environments are not written in JAX. Sebulba is particularly useful when running RL experiments where a hardware accelerator can interact with many CPU cores at a time.
-- ⚡ **Blazingly fast experiments**: All of the above allow for very quick runtime for our experiments, especially when compared to other non-JAX based MARL libraries.
+The current real-budget study evaluates four PPO variants:
 
-## Installation 🎬
+| Algorithm | Meaning | Main distinction |
+| --- | --- | --- |
+| `ff_ippo` | Feed-forward Independent PPO | Independent learners with MLP policies |
+| `ff_mappo` | Feed-forward MAPPO | Centralised critic during training |
+| `rec_ippo` | Recurrent Independent PPO | Independent learners with GRU memory |
+| `rec_mappo` | Recurrent MAPPO | Centralised critic plus recurrent memory |
 
-At the moment Mava is not meant to be installed as a library, but rather to be used as a research tool. We recommend cloning the Mava repo and installing dependencies using [uv](https://github.com/astral-sh/uv) as follows:
+The environment family is `rware`, a cooperative warehouse coordination domain
+where multiple agents need to move through a warehouse and complete shelf/request
+tasks. The selected scenarios increase or vary coordination difficulty:
+
+| Scenario | Role in the study |
+| --- | --- |
+| `tiny-2ag` | Small two-agent baseline task |
+| `tiny-4ag` | Four-agent task with higher coordination pressure |
+| `tiny-4ag-easy` | Four-agent variant with easier request settings |
+| `small-4ag` | Harder four-agent warehouse scenario |
+
+## Current Main Protocol
+
+The real-budget experiment matrix is generated by
+[`experiments/run_matrix.py`](experiments/run_matrix.py).
+
+Core settings:
+
+| Parameter | Value |
+| --- | ---: |
+| `env` | `rware` |
+| `system.num_updates` | `500` |
+| `arch.num_envs` | `64` |
+| `system.rollout_length` | `128` |
+| `system.num_minibatches` | `2` |
+| `system.update_batch_size` | `2` |
+| `arch.num_evaluation` | `10` |
+| `arch.num_eval_episodes` | `32` |
+| `arch.num_absolute_metric_eval_episodes` | `32` |
+| `arch.absolute_metric` | `True` |
+| Logging | JSON and TensorBoard |
+
+The produced metrics show `8,192,000` final step count per run. All 80 runs in
+the current matrix completed successfully.
+
+Runtime summary from `new-results/real_v1_matrix/registry.csv`:
+
+| Item | Value |
+| --- | ---: |
+| Completed runs | `80 / 80` |
+| Total recorded runtime | `5.42 hours` |
+| Mean runtime per run | `244.1 sec` |
+| `ff_ippo` total runtime | `58.9 min` |
+| `ff_mappo` total runtime | `62.0 min` |
+| `rec_ippo` total runtime | `100.6 min` |
+| `rec_mappo` total runtime | `103.9 min` |
+
+## Main Results
+
+The table below reports mean `absolute_metric` episode return over five seeds.
+These are the current headline results from `new-results/real_v1_matrix`.
+
+| Algorithm | `small-4ag` | `tiny-2ag` | `tiny-4ag` | `tiny-4ag-easy` |
+| --- | ---: | ---: | ---: | ---: |
+| `ff_ippo` | `0.625` | `3.400` | `5.644` | `8.287` |
+| `ff_mappo` | `0.150` | `5.156` | `5.756` | `8.969` |
+| `rec_ippo` | `0.356` | `3.450` | `8.500` | `11.569` |
+| `rec_mappo` | `0.025` | `6.931` | `6.700` | `13.519` |
+
+Overall mean absolute return across all four scenarios:
+
+| Algorithm | Mean absolute return |
+| --- | ---: |
+| `rec_mappo` | `6.794` |
+| `rec_ippo` | `5.969` |
+| `ff_mappo` | `5.008` |
+| `ff_ippo` | `4.489` |
+
+Scenario-level averages across all algorithms:
+
+| Scenario | Mean absolute return |
+| --- | ---: |
+| `tiny-4ag-easy` | `10.586` |
+| `tiny-4ag` | `6.650` |
+| `tiny-2ag` | `4.734` |
+| `small-4ag` | `0.289` |
+
+## Headline Findings
+
+### 1. The real-budget study produced a clear learning signal
+
+The earlier CPU study used a very small smoke budget and mostly produced
+floor-level returns. The current Colab matrix uses a much larger budget and
+shows non-zero returns across the easier and medium RWARE scenarios.
+
+This means the updated conclusion is not "all methods stayed at zero." That was
+true for the old pilot-style study, not for the current real-budget matrix.
+
+### 2. Scenario difficulty matters strongly
+
+`tiny-4ag-easy` produced the strongest returns across algorithms. `small-4ag`
+remained very difficult, with all algorithms close to the floor.
+
+This is one of the most important findings: algorithm ranking alone does not
+explain the result. The environment configuration changes the learning signal
+substantially.
+
+### 3. MAPPO helps in several feed-forward comparisons, but not universally
+
+Feed-forward MAPPO outperformed feed-forward IPPO on:
+
+- `tiny-2ag`: `5.156` vs `3.400`
+- `tiny-4ag`: `5.756` vs `5.644`
+- `tiny-4ag-easy`: `8.969` vs `8.287`
+
+However, `ff_ippo` performed better on `small-4ag`:
+
+- `ff_ippo`: `0.625`
+- `ff_mappo`: `0.150`
+
+The safe conclusion is that a centralised critic can help, but the advantage is
+scenario-dependent in this study.
+
+### 4. Recurrent memory helps on several scenarios
+
+For IPPO, recurrence improved the mean return on:
+
+- `tiny-2ag`: `3.450` vs `3.400`
+- `tiny-4ag`: `8.500` vs `5.644`
+- `tiny-4ag-easy`: `11.569` vs `8.287`
+
+For MAPPO, recurrence improved the mean return on:
+
+- `tiny-2ag`: `6.931` vs `5.156`
+- `tiny-4ag`: `6.700` vs `5.756`
+- `tiny-4ag-easy`: `13.519` vs `8.969`
+
+This supports the idea that memory can be useful in partially observable
+warehouse tasks.
+
+### 5. Recurrence does not solve the hardest selected scenario
+
+On `small-4ag`, recurrent variants did not improve performance:
+
+| Comparison | Feed-forward | Recurrent | Delta |
+| --- | ---: | ---: | ---: |
+| IPPO | `0.625` | `0.356` | `-0.269` |
+| MAPPO | `0.150` | `0.025` | `-0.125` |
+
+This prevents overclaiming. Recurrent memory helped in easier and medium
+settings, but it did not rescue performance on the harder selected warehouse
+scenario.
+
+## Interpretation
+
+The strongest defensible interpretation is:
+
+> Under the selected Mava configurations, RWARE scenarios, five-seed protocol,
+> and real-budget Colab training setup, recurrent PPO variants and MAPPO-style
+> centralised training often improve performance on easier or medium warehouse
+> coordination tasks. However, the hardest selected scenario remains difficult,
+> and no algorithm is uniformly best across all scenarios.
+
+This project should not be presented as proof that one MARL algorithm is
+universally better. It is a controlled experimental comparison inside a specific
+environment family.
+
+## Old Results Versus Current Results
+
+The folder [`old_results/`](old_results/) preserves an earlier CPU-based study.
+Those runs used a very small budget:
+
+- `num_envs=1`
+- `rollout_length=16`
+- `num_updates=50`
+- approximately `800` environment steps per run
+
+That budget was useful for testing the pipeline, but it was too small for a
+serious PPO comparison on RWARE. The old result mainly showed that the pipeline
+could run, not that the algorithms had been fairly evaluated.
+
+The current main evidence is the real-budget Colab matrix:
+
+- `num_envs=64`
+- `rollout_length=128`
+- `num_updates=500`
+- `80` completed runs
+- JSON and TensorBoard logs under `new-results/real_v1_matrix`
+
+For presentation and reporting, use the current results as the main study and
+describe `old_results/` only as the earlier smoke-budget/pilot phase.
+
+## How To Reproduce The Current Matrix
+
+The Colab workflow is documented in
+[`experiments/colab_setup.ipynb`](experiments/colab_setup.ipynb).
+
+The full matrix can be launched from the repository root with:
 
 ```bash
-# Clone the repository
-git clone https://github.com/instadeepai/Mava.git
-cd Mava
-# Create a virtual environment and install all dependencies
-uv sync
-# Activate the virtual environment
-source .venv/bin/activate
+python experiments/run_matrix.py
 ```
 
-To install Mava with a GPU or TPU aware version of JAX
+Useful options:
 
 ```bash
-uv sync --extra cuda12  # GPU aware JAX
-uv sync --extra tpu  # TPU aware JAX
+python experiments/run_matrix.py --dry-run
+python experiments/run_matrix.py --algorithms ff_ippo ff_mappo
+python experiments/run_matrix.py --scenarios tiny-2ag small-4ag
+python experiments/run_matrix.py --seeds 1 2 3
+python experiments/run_matrix.py --rerun-failed
 ```
 
-Alternatively with pip, create a virtual environment and then:
+The default output location in Colab is:
+
+```text
+/content/drive/MyDrive/mava_colab_runs/real_v1_matrix
+```
+
+The local copy of the current results is stored at:
+
+```text
+new-results/real_v1_matrix
+```
+
+## How To Analyze The Results
+
+Run:
 
 ```bash
-pip install -e ".[cuda12]"  # GPU aware JAX (leave out the [cuda12] if you don't have a GPU or are on Mac)
+python experiments/analyze_new_results.py
 ```
 
-We have tested `Mava` on Python 3.11 and 3.12, but earlier versions may also work. Specifically, we use Python 3.10 for the Quickstart notebook on Google Colab since Colab uses Python 3.10 by default.  For more in-depth installation guides including Docker builds and virtual environments, please see our [detailed installation guide](docs/DETAILED_INSTALL.md).
+This script reads all per-run `metrics.json` files under:
 
-## Getting started ⚡
-
-To get started with training your first Mava system, simply run one of the system files:
-
-```bash
-python mava/systems/ppo/anakin/ff_ippo.py
+```text
+new-results/real_v1_matrix/runs/*/json/*/*/metrics.json
 ```
 
-Mava makes use of [Hydra](https://github.com/facebookresearch/hydra) for config management. In order to see our default system configs please see the `mava/configs/` directory. A benefit of Hydra is that configs can either be set in config yaml files or overwritten from the terminal on the fly. For an example of running a system on the Level-based Foraging environment, the above code can simply be adapted as follows:
+It prints:
 
-```bash
-python mava/systems/ppo/anakin/ff_ippo.py env=lbf
-```
+- a per-run table,
+- per-algorithm/per-scenario aggregate means,
+- IPPO versus MAPPO comparisons,
+- feed-forward versus recurrent comparisons.
 
-Different scenarios can also be run by making the following config updates from the terminal:
+## Suggested Presentation Narrative
 
-```bash
-python mava/systems/ppo/anakin/ff_ippo.py env=rware env/scenario=tiny-4ag
-```
+A concise presentation can follow this structure:
 
-Additionally, we also have a [Quickstart notebook][quickstart] that can be used to quickly create and train your first multi-agent system.
+1. Multi-agent reinforcement learning studies how multiple agents learn to
+   coordinate in a shared environment.
+2. This project uses Mava as the experimental framework rather than building a
+   new algorithm from scratch.
+3. The selected task family is RWARE, a cooperative warehouse coordination
+   environment.
+4. The study compares IPPO and MAPPO, with and without recurrent memory.
+5. The experiment controls the environment, scenario definitions, seed set,
+   training budget, evaluation protocol, and logging format.
+6. The current main matrix contains 80 completed real-budget runs.
+7. The results show that recurrence and centralised training can help, but the
+   benefit depends on scenario difficulty.
+8. The hardest selected scenario, `small-4ag`, remains difficult for all tested
+   algorithms.
+9. Therefore, the correct conclusion is scenario-dependent, not a universal
+   claim that one algorithm is always best.
 
-<h2>Algorithms</h2>
+## Recommended One-Minute Summary
 
-Mava has implementations of multiple on- and off-policy multi-agent algorithms that follow the independent learners (IL), centralised training with decentralised execution (CTDE) and heterogeneous agent learning paradigms. Aside from MARL learning paradigms, we also include implementations which follow the Anakin and Sebulba architectures to enable scalable training by default. The architecture that is relevant for a given problem depends on whether the environment being used in written in JAX or not. For more information on these paradigms, please see [here][anakin_paper].
+This project is a controlled MARL experiment built on top of Mava. I compared
+four PPO-family variants: feed-forward IPPO, feed-forward MAPPO, recurrent IPPO,
+and recurrent MAPPO. The main environment was RWARE, and I tested four warehouse
+scenarios across five random seeds, giving 80 completed real-budget runs.
 
-| Algorithm  | Variants       | Continuous | Discrete | Anakin | Sebulba | Paper | Docs |
-|------------|----------------|------------|----------|--------|---------|-------|------|
-| PPO        | [`ff_ippo.py`](mava/systems/ppo/anakin/ff_ippo.py)   | ✅         | ✅       | ✅     | ✅      | [Link](https://arxiv.org/abs/2011.09533) | [Link](mava/systems/ppo/README.md) |
-|            | [`ff_mappo.py`](mava/systems/ppo/anakin/ff_mappo.py)  | ✅         | ✅       | ✅     |         | [Link](https://arxiv.org/abs/2103.01955) | [Link](mava/systems/ppo/README.md) |
-|            | [`rec_ippo.py`](mava/systems/ppo/anakin/rec_ippo.py)  | ✅         | ✅       | ✅     |         | [Link](https://arxiv.org/abs/2011.09533) | [Link](mava/systems/ppo/README.md) |
-|            | [`rec_mappo.py`](mava/systems/ppo/anakin/rec_mappo.py) | ✅         | ✅       | ✅     |         | [Link](https://arxiv.org/abs/2103.01955) | [Link](mava/systems/ppo/README.md) |
-| Q Learning | [`rec_iql.py`](mava/systems/q_learning/anakin/rec_iql.py)   |            | ✅       | ✅     |         | [Link](https://arxiv.org/abs/1511.08779) | [Link](mava/systems/q_learning/README.md) |
-|            | [`rec_qmix.py`](mava/systems/q_learning/anakin/rec_qmix.py)  |            | ✅       | ✅     |         | [Link](https://arxiv.org/abs/1803.11485) | [Link](mava/systems/q_learning/README.md) |
-| SAC        | [`ff_isac.py`](mava/systems/sac/anakin/ff_isac.py)   | ✅         |          | ✅     |         | [Link](https://arxiv.org/abs/1801.01290) | [Link](mava/systems/sac/README.md) |
-|            | [`ff_masac.py`](mava/systems/sac/anakin/ff_masac.py)  | ✅         |          | ✅     |         |     | [Link](mava/systems/sac/README.md) |
-|            | [`ff_hasac.py`](mava/systems/sac/anakin/ff_hasac.py)  | ✅         |          | ✅     |         | [Link](https://arxiv.org/abs/2306.10715) | [Link](mava/systems/sac/README.md) |
-| MAT        | [`mat.py`](mava/systems/mat/anakin/mat.py)       | ✅         | ✅       | ✅     |         | [Link](https://arxiv.org/abs/2205.14953) | [Link](mava/systems/mat/README.md) |
-| Sable      | [`ff_sable.py`](mava/systems/sable/anakin/ff_sable.py)  | ✅         | ✅       | ✅     |         | [Link](https://arxiv.org/abs/2410.01706) | [Link](mava/systems/sable/README.md) |
-|            | [`rec_sable.py`](mava/systems/sable/anakin/rec_sable.py) | ✅         | ✅       | ✅     |         | [Link](https://arxiv.org/abs/2410.01706) | [Link](mava/systems/sable/README.md) |
-| GPO        | [`rec_magpo.py`](mava/systems/gpo/anakin/rec_magpo.py) | ✅         | ✅       | ✅     |         | [Link](https://arxiv.org/abs/2507.18059) | [Link](mava/systems/gpo/README.md) |
-<h2>Environments</h2>
+The main finding is that the real-budget setup produced clear learning signals,
+unlike the earlier smoke-budget CPU study. Recurrent variants and MAPPO-style
+centralised training often improved performance on easier or medium scenarios,
+especially `tiny-4ag-easy`. However, the harder `small-4ag` scenario remained
+near the floor for every method. So the final conclusion is that recurrence and
+centralised critics can help, but their benefit is scenario-dependent.
 
-These are the environments which Mava supports _out of the box_, to add a new environment, please use the [existing wrapper implementations](mava/wrappers/) as an example. We also indicate whether the environment is implemented in JAX or not. JAX-based environments can be used with algorithms that follow the Anakin distribution architecture, while non-JAX environments can be used with algorithms following the Sebulba architecture.
+## Validity Boundaries
 
-| Environment                     | Action space        | JAX | Non-JAX | Paper | JAX Source | Non-JAX Source |
-|---------------------------------|---------------------|-----|-------|-------|------------|----------------|
-| Mulit-Robot Warehouse                 | Discrete            | ✅   | ✅     | [Link](http://arxiv.org/abs/2006.07869)  |    [Link](https://github.com/instadeepai/jumanji/tree/main/jumanji/environments/routing/robot_warehouse)   |       [Link](https://github.com/semitable/robotic-warehouse)      |
-| Level-based Foraging            | Discrete            | ✅   | ✅     | [Link](https://arxiv.org/abs/2006.07169)  |    [Link](https://github.com/instadeepai/jumanji/tree/main/jumanji/environments/routing/lbf)    |       [Link](https://github.com/semitable/lb-foraging)      |
-| StarCraft Multi-Agent Challenge | Discrete            | ✅   | ✅     | [Link](https://arxiv.org/abs/1902.04043)  |    [Link][jaxmarl]    |       [Link](https://github.com/uoe-agents/smaclite)      |
-| Multi-Agent Brax                          | Continuous          | ✅   |       | [Link](https://arxiv.org/abs/2003.06709)  |    [Link](https://github.com/FLAIROx/JaxMARL/tree/main/jaxmarl/environments/mabrax)    |             |
-| Matrax                          | Discrete            | ✅   |       | [Link](https://www.cs.toronto.edu/~cebly/Papers/_download_/multirl.pdf)  |    [Link](https://github.com/instadeepai/matrax)    |             |
-| Multi Particle Environments            | Discrete/Continuous | ✅   |       | [Link](https://arxiv.org/abs/1706.02275)  |    [Link](https://github.com/FLAIROx/JaxMARL/tree/main/jaxmarl/environments/mpe)    |            |
+This study supports claims about the selected Mava configurations and selected
+RWARE scenarios. It does not prove that any algorithm is best for all MARL
+problems.
 
-## Performance and Speed 🚀
+Important limitations:
 
-We have performed a rigorous benchmark across 45 different scenarios and 6 different environment suites to validate the performance of Mava's algorithm implementations. For more detailed results please see our [Sable paper][sable] and for all hyperparameters, please see the following [website](https://sites.google.com/view/sable-marl).
+- The main study uses one environment family: `rware`.
+- Five seeds are useful for a course project, but still limited for small
+  statistical differences.
+- The study uses one primary hyperparameter configuration.
+- The results should not be generalized to unrelated cooperative or competitive
+  MARL domains without additional experiments.
 
-<p align="center">
-    <a href="docs/images/benchmark_results/rware.png">
-        <img src="docs/images/benchmark_results/rware.png" alt="Mava performance across 15 Robot Warehouse environments" width="30%" style="display:inline-block; margin-right: 10px;"/>
-    </a>
-    <a href="docs/images/benchmark_results/lbf.png">
-        <img src="docs/images/benchmark_results/lbf.png" alt="Mava performance across 7 Level Based Foraging environments" width="30%" style="display:inline-block; margin-right: 10px;"/>
-    </a>
-    <a href="docs/images/benchmark_results/smax.png">
-        <img src="docs/images/benchmark_results/smax.png" alt="Mava performance across 11 Smax environments" width="30%" style="display:inline-block; margin-right: 10px;"/>
-    </a>
-    <a href="docs/images/benchmark_results/connector.png">
-        <img src="docs/images/benchmark_results/connector.png" alt="Mava performance across 4 Conneector environments" width="30%" style="display:inline-block; margin-right: 10px;"/>
-    </a>
-    <a href="docs/images/benchmark_results/mabrax.png">
-        <img src="docs/images/benchmark_results/mabrax.png" alt="Mava performance across 5 MaBrax environments" width="30%" style="display:inline-block; margin-right: 10px;"/>
-    </a>
-    <a href="docs/images/benchmark_results/mpe.png">
-        <img src="docs/images/benchmark_results/mpe.png" alt="Mava performance across 3 Multi-Particle environments" width="30%" style="display:inline-block; margin-right: 10px;"/>
-    </a>
-    <br>
-    <a href="docs/images/benchmark_results/legend.jpg">
-        <img src="docs/images/benchmark_results/legend.jpg" alt="Legend" width="60%" style="display:inline-block; margin-right: 10px;"/>
-    </a>
-    <div style="text-align:center; margin-top: 10px;"> <strong>Mava's algorithm performance:</strong> Each algorithm was tuned for 40 trials with the TPE optimizer and benchmarked over 10 seeds for each scenario. Environments from top left Multi-Robot Warehouse (aggregated over 15 scenarios) Level-based Foraging (aggregated over 7 scenarios) StarCraft Multi-Agent Challenge in JAX (aggregated over 11 scenarios) Connector (aggregated over 4 scenarios) Multi-Agent Brax (aggregated over 5 scenarios) Multi Particle Environments (aggregated over 3 scenarios)</div>
-</p>
+## Key Files
 
-## Code Philosophy 🧘
+| Path | Purpose |
+| --- | --- |
+| [`ELITE_EXPERIMENT_PLAN.md`](ELITE_EXPERIMENT_PLAN.md) | Original experimental design and validity plan |
+| [`experiments/colab_setup.ipynb`](experiments/colab_setup.ipynb) | Colab setup, smoke test, pilot, and full matrix workflow |
+| [`experiments/run_matrix.py`](experiments/run_matrix.py) | Batch runner for the 80-run real-budget matrix |
+| [`experiments/analyze_new_results.py`](experiments/analyze_new_results.py) | Aggregates the current metrics into tables |
+| [`new-results/real_v1_matrix/registry.csv`](new-results/real_v1_matrix/registry.csv) | Run registry with status, runtime, and output paths |
+| [`new-results/real_v1_matrix/runs`](new-results/real_v1_matrix/runs) | Per-run JSON and TensorBoard outputs |
+| [`old_results/`](old_results/) | Preserved earlier CPU/smoke-budget study |
+| [`mava/systems/ppo/README.md`](mava/systems/ppo/README.md) | Upstream explanation of PPO variants in Mava |
 
-The original code in Mava was adapted from [PureJaxRL][purejaxrl] which provides high-quality single-file implementations with research-friendly features. In turn, PureJaxRL is inspired by the code philosophy from [CleanRL][cleanrl]. Along this vein of easy-to-use and understandable RL codebases, Mava is not designed to be a modular library and is not meant to be imported. Our repository focuses on simplicity and clarity in its implementations while utilising the advantages offered by JAX such as `pmap` and `vmap`, making it an excellent resource for researchers and practitioners to build upon. A notable difference between Mava and CleanRL is that Mava creates small utilities for heavily re-used elements, such as networks and logging, we've found that this, in addition to Hydra configs, greatly improves the readability of the algorithms.
+## Final Takeaway
 
-## Contributing 🤝
-
-Please read our [contributing docs](docs/CONTRIBUTING.md) for details on how to submit pull requests, our Contributor License Agreement and community guidelines.
-
-## Roadmap 🛤️
-
-We plan to iteratively expand Mava in the following increments:
-
-- [x] Support for more environments.
-- [x] More robust recurrent systems.
-- [x] Support for non JAX-based environments.
-- [ ] Add Sebulba versions of more algorithms.
-- [x] Support for off-policy algorithms.
-- [x] Continuous action space environments and algorithms.
-- [ ] Allow systems to easily scale across multiple TPUs/GPUs.
-
-Please do follow along as we develop this next phase!
-
-## See Also 🔎
-
-**InstaDeep's MARL ecosystem in JAX.** In particular, we suggest users check out the following sister repositories:
-
-- 🔌 [OG-MARL](https://github.com/instadeepai/og-marl): datasets with baselines for offline MARL in JAX.
-- 🌴 [Jumanji][jumanji]: a diverse suite of scalable reinforcement learning environments in JAX.
-- 😎 [Matrax](https://github.com/instadeepai/matrax): a collection of matrix games in JAX.
-- ⚡ [Flashbax](https://github.com/instadeepai/flashbax): accelerated replay buffers in JAX.
-- 📈 [MARL-eval][marl_eval]: standardised experiment data aggregation and visualisation for MARL.
-
-**Related.** Other libraries related to accelerated MARL in JAX.
-
-- 🦊 [JaxMARL](https://github.com/flairox/jaxmarl): accelerated MARL environments with baselines in JAX.
-- 🌀 [DeepMind Anakin][anakin_paper] for the Anakin podracer architecture to train RL agents at scale.
-- ♟️ [Pgx](https://github.com/sotetsuk/pgx): JAX implementations of classic board games, such as Chess, Go and Shogi.
-- 🔼 [Minimax](https://github.com/facebookresearch/minimax/): JAX implementations of autocurricula baselines for RL.
-
-## Citing Mava 📚
-
-If you use Mava in your work, please cite the accompanying
-[technical report][Paper]:
-
-```bibtex
-@article{dekock2023mava,
-    title={Mava: a research library for distributed multi-agent reinforcement learning in JAX},
-    author={Ruan de Kock and Omayma Mahjoub and Sasha Abramowitz and Wiem Khlifi and Callum Rhys Tilbury
-    and Claude Formanek and Andries P. Smit and Arnu Pretorius},
-    year={2023},
-    journal={arXiv preprint arXiv:2107.01460},
-    url={https://arxiv.org/pdf/2107.01460.pdf},
-}
-```
-
-## Acknowledgements 🙏
-
-We would like to thank all the authors who contributed to the previous TF version of Mava: Kale-ab Tessera, St John Grimbly, Kevin Eloff, Siphelele Danisa, Lawrence Francis, Jonathan Shock, Herman Kamper, Willie Brink, Herman Engelbrecht, Alexandre Laterre, Karim Beguir. Their contributions can be found in our [TF technical report](https://arxiv.org/pdf/2107.01460v1.pdf).
-
-The development of Mava was supported with Cloud TPUs from Google's [TPU Research Cloud](https://sites.research.google/trc/about/) (TRC) 🌤.
-
-[Paper]: https://arxiv.org/pdf/2107.01460.pdf
-[quickstart]: https://github.com/instadeepai/Mava/blob/develop/examples/Quickstart.ipynb
-[jumanji]: https://github.com/instadeepai/jumanji
-[cleanrl]: https://github.com/vwxyzjn/cleanrl
-[purejaxrl]: https://github.com/luchris429/purejaxrl
-[anakin_paper]: https://arxiv.org/abs/2104.06272
-[jaxmarl]: https://github.com/flairox/jaxmarl
-[toward_standard_eval]: https://arxiv.org/pdf/2209.10485.pdf
-[marl_eval]: https://github.com/instadeepai/marl-eval
-[sable]: https://arxiv.org/pdf/2410.01706
+The project demonstrates a repeatable experimental workflow for comparing
+multi-agent PPO variants in Mava. The current results show meaningful learning
+under a real training budget, stronger performance from recurrent or MAPPO-style
+methods in several scenarios, and persistent difficulty on the hardest selected
+RWARE setup.
